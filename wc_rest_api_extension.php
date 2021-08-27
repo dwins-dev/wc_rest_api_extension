@@ -14,26 +14,64 @@ Author URI: http://t.me/maksim_logvinenko
  */
 
 
-function wc_rest_api_extension_users()
-{
-    $wc_rest_api_extension = WcRestApiExtension::getInstance();
-    return $wc_rest_api_extension->getUsers();
-}
-
 function wc_rest_api_extension_site_name()
 {
     $wc_rest_api_extension = WcRestApiExtension::getInstance();
     return $wc_rest_api_extension->getSiteName();
 }
 
+function wc_rest_api_extension_users()
+{
+    $wc_rest_api_extension = WcRestApiExtension::getInstance();
+    return $wc_rest_api_extension->getUsers();
+}
+
+function wc_rest_api_extension_user_create()
+{
+    $data = json_decode(file_get_contents('php://input'), true);
+    $username = $data['username'] ?? '';
+    $password = $data['password'] ?? '';
+    $email = $data['email'] ?? '';
+    return WcRestApiExtension::createUser($username, $password, $email);
+}
+
+function wc_rest_api_extension_user_update()
+{
+    $data = json_decode(file_get_contents('php://input'), true);
+    $ID = $data['ID'] ?? '';
+    $username = $data['username'] ?? '';
+    $password = $data['password'] ?? '';
+    $email = $data['email'] ?? '';
+    return WcRestApiExtension::updateUser($ID, $username, $password, $email);
+}
+
+function wc_rest_api_extension_user_delete()
+{
+    $data = json_decode(file_get_contents('php://input'), true);
+    $ID = $data['ID'] ?? '';
+    return WcRestApiExtension::deleteUser($ID);
+}
+
 add_action('rest_api_init', function () {
+    register_rest_route('wc-rest-api-extension/v1', '/site-name', array(
+        'methods' => 'POST',
+        'callback' => 'wc_rest_api_extension_site_name',
+    ));
     register_rest_route('wc-rest-api-extension/v1', '/users', array(
         'methods' => 'POST',
         'callback' => 'wc_rest_api_extension_users',
     ));
-    register_rest_route('wc-rest-api-extension/v1', '/site-name', array(
+    register_rest_route('wc-rest-api-extension/v1', '/user-create', array(
         'methods' => 'POST',
-        'callback' => 'wc_rest_api_extension_site_name',
+        'callback' => 'wc_rest_api_extension_user_create',
+    ));
+    register_rest_route('wc-rest-api-extension/v1', '/user-update', array(
+        'methods' => 'POST',
+        'callback' => 'wc_rest_api_extension_user_update',
+    ));
+    register_rest_route('wc-rest-api-extension/v1', '/user-delete', array(
+        'methods' => 'POST',
+        'callback' => 'wc_rest_api_extension_user_delete',
     ));
 });
 
@@ -62,7 +100,7 @@ class WcRestApiExtension
     }
 
 
-    public function checkAuth(): bool
+    public static function checkAuth(): bool
     {
         if (isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW'])) {
             global $wpdb;
@@ -81,14 +119,81 @@ class WcRestApiExtension
     }
 
 
-    public function getUsers()
+    public static function getUsers()
     {
-        return $this->checkAuth() ? get_users() : false;
+        return self::checkAuth() ? get_users() : false;
     }
 
-    public function getSiteName()
+    public static function getSiteName()
     {
-        return $this->checkAuth() ? get_bloginfo('name') : false;
+        return self::checkAuth() ? get_bloginfo('name') : false;
+    }
+
+    public static function createUser($username, $password = '', $email = '')
+    {
+        if (self::checkAuth()) {
+            if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                return ['message' => 'Email has the wrong format'];
+            } else {
+                return wp_create_user($username, $password, $email);
+            }
+        } else {
+            return false;
+        }
+
+    }
+
+    public static function updateUser($ID, $username, $password = '', $email = '')
+    {
+        if (!$ID) {
+            return ['message' => 'No user id specified'];
+        } elseif (self::checkAuth()) {
+            if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                return ['message' => 'Email has the wrong format'];
+            } else {
+                if (!$password) {
+                    $user_obj = get_userdata($ID);
+                    $password = $user_obj->user_pass;
+                } else {
+                    $password = wp_hash_password($password);
+                }
+
+                $userdata = [
+                    'ID' => $ID,
+                    'user_pass' => $password,
+                    'user_email' => $email,
+                    'user_login' => $username,
+                    'user_nicename' => $username,
+                    'display_name' => $username,
+                ];
+                return wp_insert_user($userdata);
+            }
+        } else {
+            return false;
+        }
+
+    }
+
+    public static function deleteUser($ID)
+    {
+        if (self::checkAuth()) {
+            if (isset($ID) && $ID) {
+                $user = new WP_User($ID);
+                if (!$user->exists()) {
+                    return ['message' => 'User does not exist'];
+                }
+                global $wpdb;
+                do_action('delete_user', $ID, null, $user);
+                $wpdb->delete($wpdb->users, array('ID' => $ID));
+                clean_user_cache($user);
+                do_action('deleted_user', $ID, null, $user);
+                return true;
+            } else {
+                return ['message' => 'user_id required'];
+            }
+        } else {
+            return false;
+        }
     }
 }
 

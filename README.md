@@ -1,6 +1,8 @@
 # Woocommerce REST API extension
 
-Плагин для расширения REST API woocommerce используя его [подход авторизации](https://developer.woocommerce.com/2015/08/07/api-settings-and-the-api-authentication-endpoint-in-2-4/) через Basic Auth и ключи доступа
+Плагин для расширения REST API woocommerce используя
+его [подход авторизации](https://developer.woocommerce.com/2015/08/07/api-settings-and-the-api-authentication-endpoint-in-2-4/)
+через Basic Auth и ключи доступа
 
 ## Название сайта
 
@@ -21,6 +23,7 @@
 ```json
 false
 ```
+
 ## Список пользователей
 
 ### Запрос
@@ -68,4 +71,85 @@ false
 
 ```json
 false
+```
+
+## Добавить пользователя
+
+### Запрос
+
+`post` `/wp-json/wc-rest-api-extension/v1/user-create`
+
+body:
+
+```json
+{
+  "username": "name",
+  "password": "password",
+  "email": "email@email.email"
+}
+```
+
+### Ответ
+
+#### Правильные ключи доступа
+
+В ответ приходит id созданного пользователя
+
+#### В случае ошибки
+
+Отдает ошибки в элементе массива message
+
+Пример:
+
+```json
+{
+  "code": "existing_user_login",
+  "message": "Извините, это имя пользователя уже существует!",
+  "data": null
+}
+```
+
+## Добавить пользователя
+
+### Запрос
+
+`post` `/wp-json/wc-rest-api-extension/v1/user-delete`
+
+body:
+
+```json
+{
+  "username": "name",
+  "password": "password",
+  "email": "email@email.email"
+}
+```
+## Обновить данные пользователя
+
+### Запрос
+
+`post` `/wp-json/wc-rest-api-extension/v1/user-update`
+
+body:
+
+```json
+{
+  "ID": 3,
+  "username": "name",
+  "password": "password",
+  "email": "email@email.email"
+}
+```
+## Удалить пользователя
+
+### Запрос
+
+`post` `/wp-json/wc-rest-api-extension/v1/user-delete`
+
+body:
+
+```json
+{
+  "ID": 3
+}
 ```
