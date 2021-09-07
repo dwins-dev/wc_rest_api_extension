@@ -7,7 +7,7 @@ Author: DWINS
 Author URI: http://t.me/maksim_logvinenko
 */
 
-require_once __DIR__ .'\includes\WcRestApiExtension.php';
+require_once __DIR__ .'/includes/WcRestApiExtension.php';
 
 
 /**
