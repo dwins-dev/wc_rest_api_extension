@@ -110,23 +110,6 @@ body:
 }
 ```
 
-## Добавить пользователя
-
-### Запрос
-
-`post` `/wp-json/wc-rest-api-extension/v1/user-delete`
-
-body:
-
-```json
-{
-  "username": "name",
-  "password": "password",
-  "email": "email@email.email",
-  "role": "subscriber"
-}
-```
-
 ## Обновить данные пользователя
 
 ### Запрос
