@@ -85,7 +85,8 @@ body:
 {
   "username": "name",
   "password": "password",
-  "email": "email@email.email"
+  "email": "email@email.email",
+  "role": "subscriber"
 }
 ```
 
@@ -121,9 +122,11 @@ body:
 {
   "username": "name",
   "password": "password",
-  "email": "email@email.email"
+  "email": "email@email.email",
+  "role": "subscriber"
 }
 ```
+
 ## Обновить данные пользователя
 
 ### Запрос
@@ -140,6 +143,7 @@ body:
   "email": "email@email.email"
 }
 ```
+
 ## Удалить пользователя
 
 ### Запрос
@@ -151,5 +155,25 @@ body:
 ```json
 {
   "ID": 3
+}
+```
+
+## Получить массив ролей
+
+### Запрос
+
+`post` `/wp-json/wc-rest-api-extension/v1/roles`
+
+#### Правильный ключ доступа
+
+```json
+{
+  "administrator": "Administrator",
+  "editor": "Editor",
+  "author": "Author",
+  "contributor": "Contributor",
+  "subscriber": "Subscriber",
+  "customer": "Customer",
+  "shop_manager": "Shop manager"
 }
 ```
