@@ -151,6 +151,7 @@ function test($id, $message)
 //    todo рабочий вариант запроса к сайту проекта
     $response = Requests::post( URL_NGH, array(), $body );
 
+    error_log(print_r($response, 1));
 }
 
 
