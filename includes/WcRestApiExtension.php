@@ -6,6 +6,7 @@ abstract class WcRestApiExtension
     public static string $auth_user = '';
     public static string $auth_password = '';
     public static bool $auth_check = false;
+    public static $WP_REST_Users_Controller;
 
 
     /**
@@ -13,14 +14,10 @@ abstract class WcRestApiExtension
      */
     public static function getData()
     {
-        if (self::checkAuth()) {
-            return [
-                'site_name' => self::getSiteName(),
-                'roles' => self::getRoles(),
-            ];
-        } else {
-            return false;
-        }
+        return [
+            'site_name' => self::getSiteName(),
+            'roles' => self::getRoles(),
+        ];
     }
 
     /**
@@ -28,7 +25,7 @@ abstract class WcRestApiExtension
      */
     public static function getUsers()
     {
-        return self::checkAuth() ? get_users() : false;
+        return get_users();
     }
 
     /**
@@ -36,7 +33,7 @@ abstract class WcRestApiExtension
      */
     public static function getSiteName()
     {
-        return self::checkAuth() ? get_bloginfo('name') : false;
+        return get_bloginfo('name');
     }
 
     /**
@@ -48,20 +45,14 @@ abstract class WcRestApiExtension
      */
     public static function createUser(string $username, string $password = '', string $email = '', string $role = '')
     {
-        if (self::checkAuth()) {
-            if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                return ['message' => 'Email has the wrong format'];
-            } else {
-                $user_id = wp_create_user($username, $password, $email);
-                if ($role) {
-                    $user_id_role = new WP_User($user_id);
-                    $user_id_role->set_role($role);
-                }
-                return $user_id;
-            }
-        } else {
-            return false;
-        }
+        $create_user_request = new WP_REST_Request();
+        $create_user_request->set_param('username', $username);
+        $create_user_request->set_param('password', $password ?? wp_generate_password(8, false, false));
+        $create_user_request->set_param('email', $email);
+        if ($role) $create_user_request->set_param('roles', [$role]);
+
+        $WP_REST_Users_Controller = self::WP_REST_Users_Controller_initial();
+        return $WP_REST_Users_Controller->create_item($create_user_request);
 
     }
 
@@ -75,60 +66,28 @@ abstract class WcRestApiExtension
      */
     public static function updateUser(int $ID, string $username, string $password = '', string $email = '', string $role = '')
     {
-        if (!$ID) {
-            return ['message' => 'No user id specified'];
-        } elseif (self::checkAuth()) {
-            if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                return ['message' => 'Email has the wrong format'];
-            } else {
-                if (!$password) {
-                    $user_obj = get_userdata($ID);
-                    $password = $user_obj->user_pass;
-                } else {
-                    $password = wp_hash_password($password);
-                }
+        $update_user_request = new WP_REST_Request();
+        $update_user_request->set_param('id', $ID);
+        if ($password) $update_user_request->set_param('password', $password);
+        if ($email) $update_user_request->set_param('email', $email);
+        if ($role) $update_user_request->set_param('roles', [$role]);
 
-                $userdata = [
-                    'ID' => $ID,
-                    'user_pass' => $password,
-                    'user_email' => $email,
-                    'user_login' => $username,
-                    'user_nicename' => $username,
-                    'display_name' => $username
-                ];
-                if ($role) $userdata['role'] = $role;
-                return wp_insert_user($userdata);
-            }
-        } else {
-            return false;
-        }
+        $WP_REST_Users_Controller = self::WP_REST_Users_Controller_initial();
 
+        return $WP_REST_Users_Controller->update_item($update_user_request);
     }
 
     /**
      * @param $ID int user_id
-     * @return bool|string[]
+     * @return string[]|WP_Error|WP_REST_Response|WP_User
      */
-    public static function deleteUser($ID)
+    public static function deleteUser(int $ID)
     {
-        if (self::checkAuth()) {
-            if (isset($ID) && $ID) {
-                $user = new WP_User($ID);
-                if (!$user->exists()) {
-                    return ['message' => 'User does not exist'];
-                }
-                global $wpdb;
-                do_action('delete_user', $ID, null, $user);
-                $wpdb->delete($wpdb->users, array('ID' => $ID));
-                clean_user_cache($user);
-                do_action('deleted_user', $ID, null, $user);
-                return true;
-            } else {
-                return ['message' => 'user_id required'];
-            }
-        } else {
-            return false;
-        }
+        $delete_user_request = new WP_REST_Request();
+        $delete_user_request->set_param('id', $ID);
+        $delete_user_request->set_param('force', true);
+        $WP_REST_Users_Controller = self::WP_REST_Users_Controller_initial();
+        return $WP_REST_Users_Controller->delete_item($delete_user_request);
     }
 
     /**
@@ -136,11 +95,7 @@ abstract class WcRestApiExtension
      */
     public static function getRoles()
     {
-        if (self::checkAuth()) {
-            return wp_roles()->role_names;
-        } else {
-            return false;
-        }
+        return wp_roles()->role_names;
     }
 
     /**
@@ -174,6 +129,13 @@ abstract class WcRestApiExtension
         } else {
             return false;
         }
+    }
+
+    public static function WP_REST_Users_Controller_initial(): WP_REST_Users_Controller
+    {
+        if (!self::$WP_REST_Users_Controller)
+            self::$WP_REST_Users_Controller = new WP_REST_Users_Controller;
+        return self::$WP_REST_Users_Controller;
     }
 }
 
