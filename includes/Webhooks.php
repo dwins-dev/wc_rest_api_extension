@@ -27,8 +27,8 @@ if (!class_exists('Webhooks')) {
         /**
          * Actions update/create user to events profile_update
          * @param $user_id
-         * @param ?WP_User $old_user_data
-         * @param ?array $user_data
+         * @param WP_User|null $old_user_data
+         * @param array|null $user_data
          */
         public static function update_user($user_id, WP_User $old_user_data = null, array $user_data = null)
         {
@@ -43,10 +43,10 @@ if (!class_exists('Webhooks')) {
          * Push ngh user
          * @param string $event_type update|create|delete
          * @param int $event_user_id
-         * @param ?array $event_user_email
-         * @param ?string $event_user_role
+         * @param string|null $event_user_email
+         * @param string|null $event_user_role
          */
-        private static function push_user_event(string $event_type, int $event_user_id, array $event_user_email = null, string $event_user_role = null)
+        private static function push_user_event(string $event_type, int $event_user_id, string $event_user_email = null, string $event_user_role = null)
         {
 
             if ($data = get_option('wc_rest_api_extension_webhook')) {
