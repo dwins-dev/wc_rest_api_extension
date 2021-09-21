@@ -79,9 +79,9 @@ function wc_rest_api_extension_user_update()
 
 /**
  * Delete user
- * @return string[]
+ * @return WP_Error|WP_REST_Response|WP_User
  */
-function wc_rest_api_extension_user_delete(): array
+function wc_rest_api_extension_user_delete()
 {
     $data = json_decode(file_get_contents('php://input'), true);
     webhook_set($data);

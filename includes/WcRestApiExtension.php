@@ -82,8 +82,8 @@ abstract class WcRestApiExtension
     }
 
     /**
-     * @param $ID int user_id
-     * @return string[]|WP_Error|WP_REST_Response|WP_User
+     * @param int $ID user_id
+     * @return WP_Error|WP_REST_Response|WP_User
      */
     public static function deleteUser(int $ID)
     {
@@ -95,9 +95,9 @@ abstract class WcRestApiExtension
     }
 
     /**
-     * @return false|array Array roles
+     * @return array Array roles
      */
-    public static function getRoles()
+    public static function getRoles(): array
     {
         return wp_roles()->role_names;
     }
