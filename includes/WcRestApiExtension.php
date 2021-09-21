@@ -1,18 +1,22 @@
 <?php
 
+if (!defined('ABSPATH')) {
+    exit;
+}
 
 abstract class WcRestApiExtension
 {
     public static string $auth_user = '';
     public static string $auth_password = '';
     public static bool $auth_check = false;
+    public static ?int $auth_id =  null;
     public static $WP_REST_Users_Controller;
 
 
     /**
-     * @return array|false
+     * @return array
      */
-    public static function getData()
+    public static function getData(): array
     {
         return [
             'site_name' => self::getSiteName(),
@@ -21,9 +25,9 @@ abstract class WcRestApiExtension
     }
 
     /**
-     * @return array|false
+     * @return array
      */
-    public static function getUsers()
+    public static function getUsers(): array
     {
         return get_users();
     }
@@ -119,10 +123,12 @@ abstract class WcRestApiExtension
                 if (count($auth) > 0) {
                     self::$auth_user = $_SERVER['PHP_AUTH_USER'];
                     self::$auth_password = $_SERVER['PHP_AUTH_PW'];
+                    self::$auth_id = $auth[0]->key_id;
                     return self::$auth_check = true;
                 } else {
                     self::$auth_user = '';
                     self::$auth_password = '';
+                    self::$auth_id = null;
                     return self::$auth_check = false;
                 }
             }

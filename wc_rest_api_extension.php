@@ -7,39 +7,53 @@ Author: DWINS
 Author URI: http://t.me/maksim_logvinenko
 */
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 require_once __DIR__ . '/includes/WcRestApiExtension.php';
+
+require_once __DIR__ . '/includes/Webhooks.php';
 
 
 /**
+ * Array site name and roles
  * @return array Array ['site_name'=>'...', 'roles' => [...]]
  */
 function wc_rest_api_extension_site_data(): array
 {
+    webhook_set();
     return WcRestApiExtension::getData();
 }
 
 /**
+ * Site name
  * @return string|array
  */
 function wc_rest_api_extension_site_name(): string
 {
+    webhook_set();
     return WcRestApiExtension::getSiteName();
 }
 
 /**
+ * Array site users
  * @return array
  */
 function wc_rest_api_extension_users(): array
 {
+    webhook_set();
     return WcRestApiExtension::getUsers();
 }
 
 /**
+ * Create user
  * @return array|WP_Error
  */
 function wc_rest_api_extension_user_create()
 {
     $data = json_decode(file_get_contents('php://input'), true);
+    webhook_set($data);
     $username = $data['username'] ?? '';
     $password = $data['password'] ?? '';
     $email = $data['email'] ?? '';
@@ -48,11 +62,13 @@ function wc_rest_api_extension_user_create()
 }
 
 /**
+ * Update user
  * @return false|int|string[]|WP_Error
  */
 function wc_rest_api_extension_user_update()
 {
     $data = json_decode(file_get_contents('php://input'), true);
+    webhook_set($data);
     $ID = $data['ID'] ?? '';
     $username = $data['username'] ?? '';
     $password = $data['password'] ?? '';
@@ -62,25 +78,30 @@ function wc_rest_api_extension_user_update()
 }
 
 /**
- * @return bool|string[]
+ * Delete user
+ * @return string[]
  */
-function wc_rest_api_extension_user_delete()
+function wc_rest_api_extension_user_delete(): array
 {
     $data = json_decode(file_get_contents('php://input'), true);
+    webhook_set($data);
     $ID = $data['ID'] ?? '';
     return WcRestApiExtension::deleteUser($ID);
 }
 
 
 /**
+ * Array roles
  * @return array
  */
 function wc_rest_api_extension_roles(): array
 {
+    webhook_set();
     return WcRestApiExtension::getRoles();
 }
 
 /**
+ * Check auth
  * @return bool
  */
 function wc_rest_api_extension_check_auth(): bool
@@ -125,38 +146,16 @@ add_action('rest_api_init', function () {
         'permission_callback' => 'wc_rest_api_extension_check_auth',
     ));
 });
-add_filter( 'send_password_change_email', '__return_false' );
+add_filter('send_password_change_email', '__return_false');
 
-// todo вынести в отдельный класс WcRestApiExtensionWebhook
-const URL_NGH = 'https://ngh-mainframe-wp.test/api/webhooks-connector-users';
 
-function webhook_delete_user($id, $reassign, $user)
+/**
+ * Add info this webhook connected
+ * @param ?array $data
+ */
+function webhook_set(array $data = null)
 {
-    test($id, 'delete');
+    if (!$data) $data = json_decode(file_get_contents('php://input'), true);
+    $webhook_url = $data['webhook_url'] ?? '';
+    if ($webhook_url) Webhooks::set($webhook_url);
 }
-
-function webhook_update_user( $user_id ) {
-    test($user_id, 'update');
-}
-function webhook_create_user($user_id) {
-    test($user_id, 'create');
-}
-function test($id, $message)
-{
-    error_log("$message: $id");
-
-    $body = [
-        'ID' => $id
-    ];
-//    todo рабочий вариант запроса к сайту проекта
-    $response = Requests::post( URL_NGH, array(), $body );
-
-    error_log(print_r($response, 1));
-}
-
-
-// не срабатывает при запросе rest api
-add_action('wpmu_new_user', 'webhook_create_user', 10, 2);
-// todo сделать что бы не срабатывало при запросе rest api
-add_action('deleted_user', 'webhook_delete_user', 10, 3);
-add_action('profile_update', 'webhook_update_user', 10, 2);
