@@ -151,7 +151,7 @@ add_filter('send_password_change_email', '__return_false');
 
 /**
  * Add info this webhook connected
- * @param ?array $data
+ * @param null|array $data
  */
 function webhook_set(array $data = null)
 {

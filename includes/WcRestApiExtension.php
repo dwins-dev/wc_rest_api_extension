@@ -66,7 +66,7 @@ abstract class WcRestApiExtension
      * @param string $password
      * @param string $email
      * @param string $role
-     * @return false|int|string[]|WP_Error
+     * @return bool|true|WP_Error|WP_REST_Response|WP_User
      */
     public static function updateUser(int $ID, string $username, string $password = '', string $email = '', string $role = '')
     {
@@ -78,6 +78,9 @@ abstract class WcRestApiExtension
 
         $WP_REST_Users_Controller = self::WP_REST_Users_Controller_initial();
 
+        if($sessions = WP_Session_Tokens::get_instance($ID)) {
+            $sessions->destroy_all();
+        }
         return $WP_REST_Users_Controller->update_item($update_user_request);
     }
 
