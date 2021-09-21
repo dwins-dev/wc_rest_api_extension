@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: Woocommerce REST API extension
-Description: Равширение REST API woocommerce
+Description: Расширение REST API и webhook woocommerce
 Version: 1.0.0
 Author: DWINS
 Author URI: http://t.me/maksim_logvinenko
